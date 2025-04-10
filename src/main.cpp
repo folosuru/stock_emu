@@ -50,6 +50,8 @@ int main() {
     } else {
         std::printf("low:  --\n");
     }
+    market->get(id)->printAll();
+    return 0;
 
     std::ofstream file("out.csv");
     for (int loop = 0; loop < 1000; loop++) {

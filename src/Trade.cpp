@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <limits>
 
 #include "Stock.hpp"
@@ -52,17 +53,13 @@ bool TradeBoard::LimitOrder_Sell(StockPrice price, StockCount count, Trader& tra
 
         if (sold_stock != 0) {
             this->history.push_back({sold_stock, price});
-            update_current_latest();
+            update_current_latest(price);
+            update_current_low(price);
         }
 
         if (order_stocks != 0) {  // 売れ残りがある => order.priceでの買い手がいない
-            bool is_new_entry_price = sell.order_list[price].empty();
-            update_current_low();
-
             sell.add(3, price, std::move(order_stocks), trader, id);
-            if (is_new_entry_price) {
-                update_current_high();
-            }
+            update_current_high_add(price);
         }
     }
     return true;
@@ -106,6 +103,15 @@ bool TradeBoard::LimitOrder_Buy(StockPrice price, StockCount count, Trader& trad
         paid_money.move(price * trade_stock_count).to(seller_money);
         sell_order->amount.move(trade_stock_count).to(trader_stock);
     }
+    auto sold_stock = count - current_amount;
+    if (sold_stock != 0) {
+        update_current_high(price);
+        update_current_latest(price);
+    }
+    if (current_amount != 0) {
+        buy.add(3, price, current_amount, trader, std::move(paid_money));
+        update_current_low_add(price);
+    }
     return true;
 }
 
@@ -123,7 +129,108 @@ void TradeBoard::tick() noexcept {
     market_ref.updatePricePerValue(*this);
 }
 
-void TradeBoard::update_current_high() {}
+void TradeBoard::update_current_high(StockPrice price) {
+    /*
+     * 起こりうるケースは：
+     *
+     * | sell  |  buy |
+     * | (1)   |      |
+     * | (2)   |      |
+     * |       |  (3) |
+     * |       |  (4) |
+     *
+     * (1) が約定
+     * (2) が一部約定
+     * (2) が全部約定
+     * (3) が一部約定
+     * (3) が全部約定
+     * (4) が約定
+     *
+     * に分類される。このうち、処理する必要があるのは2の全部約定だけ
+     */
+    if (this->CurrentStockPrice.higer != price) {  // is (1), (3), (4)
+        return;
+    }
+    if (!this->sell.order_list[price].empty()) {  // 2の一部
+        return;
+    }
 
-void update_current_low();
-void update_current_latest();
+    auto iter = this->sell.order_list.begin();
+    while (this->sell.order_list.end() != iter) {
+        if (iter->second.empty()) {
+            iter++;
+            continue;
+        }
+        break;
+    }
+
+    this->CurrentStockPrice.higer = iter->first;
+}
+
+void TradeBoard::update_current_low(StockPrice price) {
+    if (this->CurrentStockPrice.lower != price) {  // is (1), (3), (4)
+        return;
+    }
+    if (!this->sell.order_list[price].empty()) {  // 2の一部
+        return;
+    }
+
+    auto iter = this->buy.order_list.rbegin();
+    while (this->buy.order_list.rend() != iter) {
+        if (iter->second.empty()) {
+            iter++;
+            continue;
+        }
+        break;
+    }
+
+    this->CurrentStockPrice.lower = iter->first;
+}
+
+void TradeBoard::update_current_high_add(StockPrice price) {
+    if (price < this->CurrentStockPrice.higer) {
+        CurrentStockPrice.higer = price;
+    }
+}
+
+void TradeBoard::update_current_low_add(StockPrice price) {
+    if (price > CurrentStockPrice.lower) {
+        CurrentStockPrice.lower = price;
+    }
+}
+
+void TradeBoard::update_current_latest(StockPrice price) {
+    CurrentStockPrice.latest = price;
+}
+
+void TradeBoard::updateStockValue(StockPrice price, StockMarketRef market) {}
+
+StockPrice TradeBoard::to_withen_PriceLimit(StockPrice price) const noexcept {
+    if (!PriceLimit) {
+        return price;
+    }
+    if (PriceLimit->PriceLimit_high < price) {
+        return PriceLimit->PriceLimit_high;
+    } else if (PriceLimit->PriceLimit_low > price) {
+        return PriceLimit->PriceLimit_low;
+    }
+    return price;
+}
+
+void StockMarket::updatePricePerValue(const TradeBoard& ref) {
+    this->value_dondake_hanareteru.at(ref.id) =
+        std::abs(ref.getCurrentPrice().latest.getValue() - ref.StockValue().getValue());
+}
+
+bool TradeBoard::is_withen_PriceLimit(StockPrice price) const noexcept {
+    if (!PriceLimit) {
+        return true;
+    }
+    if (PriceLimit->PriceLimit_high < price) {
+        return false;
+    }
+    if (PriceLimit->PriceLimit_low > price) {
+        return false;
+    }
+    return true;
+}

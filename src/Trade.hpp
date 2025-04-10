@@ -212,7 +212,14 @@ private:
 
     void update_current_high();
     void update_current_low();
-    void update_current_latest();
+
+    void update_current_high(StockPrice price);
+    void update_current_low(StockPrice price);
+
+    void update_current_high_add(StockPrice price);
+    void update_current_low_add(StockPrice price);
+
+    void update_current_latest(StockPrice price);
     void update_history(StockPrice price, StockCount count);
 };
 
