@@ -1,5 +1,4 @@
 #pragma once
-#include <limits>
 #include <utility>
 
 #include "money.hpp"
@@ -15,6 +14,7 @@
 #include <optional>
 #include <vector>
 
+#include "TradeHistory.hpp"
 #include "util/RingQueue.hpp"
 
 struct TradeBoard;
@@ -33,18 +33,6 @@ struct TradeOrder {
 struct TradeRequest {
     StockCount amount;
     Trader& trader;
-};
-
-struct TradeHistory {
-    StockCount amount;
-    StockPrice price;
-};
-
-struct TickHistory {
-    StockPrice start = {std::numeric_limits<Money_data_t>::min()};
-    StockPrice end;
-    StockPrice high = {std::numeric_limits<Money_data_t>::min()};
-    StockPrice low = {std::numeric_limits<Money_data_t>::max()};
 };
 
 struct Trader {
@@ -104,15 +92,11 @@ struct BuyTradeRequest {
 };
 
 struct TradeBoard {
+public:
     StockId id;
-    std::deque<TradeHistory> history{{{300}, {100}}};
-    std::deque<TickHistory> tick_history{};
 
     TradeBoard(StockId id_, StockMarket& market_, StockPrice value = {300})
-        : id(id_), market_ref(market_), stock_value(value) {
-        CurrentStockPrice.higer = {302};
-        CurrentStockPrice.lower = {298};
-    }
+        : id(id_), market_ref(market_), stock_value(value) {}
 
     bool LimitOrder_Sell(StockPrice, StockCount, Trader&);
     bool LimitOrder_Buy(StockPrice, StockCount, Trader&);
@@ -142,10 +126,6 @@ struct TradeBoard {
         }
     }
 
-    auto& getCurrentPrice() const {
-        return CurrentStockPrice;
-    }
-
     const auto& getBuyBoard() const {
         return buy;
     }
@@ -161,9 +141,6 @@ struct TradeBoard {
     void updateStockValue(StockPrice price, StockMarketRef market);
 
     void tick() noexcept;
-
-    StockPrice to_withen_PriceLimit(StockPrice pric) const noexcept;
-    bool is_withen_PriceLimit(StockPrice price) const noexcept;
 
 private:
     template<class Request_t, class limit_destructor_t>
@@ -193,34 +170,9 @@ private:
     TradeRequestBoard<BuyTradeRequest, buy_limit_destruct> buy;
     TradeRequestBoard<SellTradeRequest, sell_limit_destruct> sell;
 
-    struct {
-        std::optional<StockPrice> higer;
-        std::optional<StockPrice> lower;
-        StockPrice latest;
-    } CurrentStockPrice;
-
-    struct PriceLimit_data {
-        StockPrice PriceLimit_high;
-        StockPrice PriceLimit_low;
-    };
-
-    std::optional<PriceLimit_data> PriceLimit = std::nullopt;
-
     StockMarket& market_ref;
 
     StockPrice stock_value = {300};
-
-    void update_current_high();
-    void update_current_low();
-
-    void update_current_high(StockPrice price);
-    void update_current_low(StockPrice price);
-
-    void update_current_high_add(StockPrice price);
-    void update_current_low_add(StockPrice price);
-
-    void update_current_latest(StockPrice price);
-    void update_history(StockPrice price, StockCount count);
 };
 
 class StockMarket {
@@ -262,7 +214,6 @@ public:
 
 private:
     std::vector<std::shared_ptr<TradeBoard>> boards;
-
     std::vector<double> value_dondake_hanareteru;
 };
 
