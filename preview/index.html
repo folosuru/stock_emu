@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+    <link href="css/style.css" rel="stylesheet">
+  </head>
+  <body>
+    <script>
+        fetch('../build/out.csv')
+          .then(response => response.text())
+          .then(text => {
+    const rows = text.trim().split(',').map(it => parseInt(it.trim()))
+        ;
+    console.log(rows);
+  })
+  .catch(error => {
+    console.error('CSVの取得または解析中にエラーが発生しました:', error);
+  });
+    </script>
+  </body>
+</html>

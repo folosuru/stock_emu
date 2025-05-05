@@ -1,4 +1,5 @@
 #pragma once
+#include "money.hpp"
 #ifndef INCLUDE_TRADE_TRADEHISTORY_HPP
 #define INCLUDE_TRADE_TRADEHISTORY_HPP
 
@@ -12,10 +13,12 @@ struct TradeHistory {
 };
 
 struct TickHistory {
-    StockPrice start = {std::numeric_limits<Money_data_t>::min()};
-    StockPrice end;
+    StockPrice start = {nothing};
+    StockPrice end = {nothing};
     StockPrice high = {std::numeric_limits<Money_data_t>::min()};
     StockPrice low = {std::numeric_limits<Money_data_t>::max()};
+
+    constexpr static Money_data_t nothing = std::numeric_limits<Money_data_t>::min();
 };
 struct TradeBoard;
 
@@ -24,26 +27,35 @@ struct TradeBoard;
  *
  */
 class TradeBoardHistory {
+public:
+    const auto& getCurrentPrice() const noexcept {
+        return CurrentStockPrice;
+    }
+
+    /**
+     * 約定したときに呼ぶ
+     */
+    void update_current_high(StockPrice price, const TradeBoard& board);
+    void update_current_low(StockPrice price, const TradeBoard& board);
+
+    /**
+     * 板に注文が追加された時に呼ぶ
+     */
+    void update_sell_board_add(StockPrice price);
+    void update_buy_board_add(StockPrice price);
+
+    void update_history(StockPrice price, StockCount count);
+
+    const TickHistory& tick();
+
+private:
     struct {
         std::optional<StockPrice> higer;
         std::optional<StockPrice> lower;
-        StockPrice latest;
+        StockPrice latest = {999};
     } CurrentStockPrice;
 
     std::deque<TradeHistory> history{{{300}, {100}}};
-    std::deque<TickHistory> tick_history{};
-
-    void update_current_high();
-    void update_current_low();
-
-    void update_current_high(StockPrice price);
-    void update_current_low(StockPrice price);
-
-    void update_current_high_add(StockPrice price);
-    void update_current_low_add(StockPrice price);
-
-    void update_current_latest(StockPrice price);
-    void update_history(StockPrice price, StockCount count);
+    std::deque<TickHistory> tick_history = {{}};
 };
-
-#endif  // INCLUDE_TRADE_TRADEHISTORY_HPP1
+#endif  // INCLUDE_TRADE_TRADEHISTORY_HPP

@@ -101,7 +101,6 @@ public:
         if (std::is_constant_evaluated()) {
             static_assert(true, "cannot destruct stock");
         } else {
-            std::cout << "///" << std::endl;
         }
     }
 

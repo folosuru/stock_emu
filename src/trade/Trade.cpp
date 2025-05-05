@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <limits>
 
 #include "Stock.hpp"
+#include "trade/TradeHistory.hpp"
 
 void Trader::sell(StockPrice price, StockCount amount, StockId id, StockMarketRef ref) {
     (*ref)[id]->LimitOrder_Sell(price, amount, *this);
@@ -20,7 +20,7 @@ bool TradeBoard::LimitOrder_Sell(StockPrice price, StockCount count, Trader& tra
         if (trader.stock[id] < count) {  // 空売りは面倒なことになる
             return false;
         }
-        if (!is_withen_PriceLimit(price)) return false;
+        if (!limit.is_withen_PriceLimit(price)) return false;
 
         StockHoldingCount order_stocks = trader.stock[id].devide(count);
         auto& buyer_queue = buy.order_list[price];
@@ -52,14 +52,15 @@ bool TradeBoard::LimitOrder_Sell(StockPrice price, StockCount count, Trader& tra
         const auto sold_stock = count - order_stocks.to_StockCount();
 
         if (sold_stock != 0) {
-            this->history.push_back({sold_stock, price});
-            update_current_latest(price);
-            update_current_low(price);
+            history.update_current_low(price, *this);
+
+            // this->history.push_back({sold_stock, price});
+            history.update_history(price, sold_stock);
         }
 
         if (order_stocks != 0) {  // 売れ残りがある => order.priceでの買い手がいない
             sell.add(3, price, std::move(order_stocks), trader, id);
-            update_current_high_add(price);
+            history.update_sell_board_add(price);
         }
     }
     return true;
@@ -74,7 +75,7 @@ bool TradeBoard::LimitOrder_Buy(StockPrice price, StockCount count, Trader& trad
         return false;
     }
 
-    if (!is_withen_PriceLimit(price)) return false;
+    if (!limit.is_withen_PriceLimit(price)) return false;
 
     Money paid_money = trader.money.devide(buy_price);
     StockCount current_amount = count;
@@ -105,31 +106,30 @@ bool TradeBoard::LimitOrder_Buy(StockPrice price, StockCount count, Trader& trad
     }
     auto sold_stock = count - current_amount;
     if (sold_stock != 0) {
-        update_current_high(price);
-        update_current_latest(price);
+        history.update_current_high(price, *this);
+        history.update_history(price, sold_stock);
     }
     if (current_amount != 0) {
         buy.add(3, price, current_amount, trader, std::move(paid_money));
-        update_current_low_add(price);
+        history.update_buy_board_add(price);
     }
     return true;
 }
 
-void TradeBoard::update_history(StockPrice price, StockCount count) {
-    this->history.push_back({count, price});
-    auto& tick_history = this->tick_history.back();
-    if (tick_history.start.getValue() == std::numeric_limits<StockCount_data_t>::min()) {
-        tick_history.start = price;
+void TradeBoard::tick() noexcept {
+    const auto& latest_tick = history.tick();
+    market_ref.updatePricePerValue(*this);
+    if (latest_tick.end.getValue() != TickHistory::nothing) {
+        limit.update_PriceLimit(latest_tick.end);
     }
-    tick_history.end = price;
 }
 
-void TradeBoard::tick() noexcept {
-    this->tick_history.emplace_back();
-    market_ref.updatePricePerValue(*this);
+void TradeBoard::updateStockValue(StockPrice price, StockMarketRef market) {
+    this->stock_value = price;
+    market->updatePricePerValue(*this);
 }
 
 void StockMarket::updatePricePerValue(const TradeBoard& ref) {
     this->value_dondake_hanareteru.at(ref.id) =
-        std::abs(ref.getCurrentPrice().latest.getValue() - ref.StockValue().getValue());
+        std::abs(ref.getHistory().getCurrentPrice().latest.getValue() - ref.StockValue().getValue());
 }

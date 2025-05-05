@@ -1,22 +1,23 @@
 #include "TradeHistory.hpp"
 
-void TradeBoardHistory::update_current_high_add(StockPrice price) {
-    if (price < this->CurrentStockPrice.higer) {
+#include <optional>
+#include <trade/Trade.hpp>
+
+#include "Stock.hpp"
+
+void TradeBoardHistory::update_sell_board_add(StockPrice price) {
+    if (!CurrentStockPrice.higer.has_value() || price < this->CurrentStockPrice.higer) {
         CurrentStockPrice.higer = price;
     }
 }
 
-void TradeBoardHistory::update_current_low_add(StockPrice price) {
-    if (price > CurrentStockPrice.lower) {
+void TradeBoardHistory::update_buy_board_add(StockPrice price) {
+    if (!CurrentStockPrice.lower.has_value() || price > CurrentStockPrice.lower) {
         CurrentStockPrice.lower = price;
     }
 }
 
-void TradeBoardHistory::update_current_latest(StockPrice price) {
-    CurrentStockPrice.latest = price;
-}
-
-void TradeBoardHistory::update_current_high(StockPrice price) {
+void TradeBoardHistory::update_current_high(StockPrice price, const TradeBoard& board) {
     /*
      * 起こりうるケースは：
      *
@@ -38,32 +39,35 @@ void TradeBoardHistory::update_current_high(StockPrice price) {
     if (this->CurrentStockPrice.higer != price) {  // is (1), (3), (4)
         return;
     }
-    if (!this->sell.order_list[price].empty()) {  // 2の一部
+    if (board.getSellBoard().OrderExists(price)) {  // 2の一部
         return;
     }
 
-    auto iter = this->sell.order_list.begin();
-    while (this->sell.order_list.end() != iter) {
+    auto iter = board.getSellBoard().order_list.begin();
+    while (board.getSellBoard().order_list.end() != iter) {
         if (iter->second.empty()) {
             iter++;
             continue;
         }
         break;
     }
-
-    this->CurrentStockPrice.higer = iter->first;
+    if (iter != board.getSellBoard().order_list.end()) {
+        this->CurrentStockPrice.higer = iter->first;
+    } else {
+        this->CurrentStockPrice.higer = std::nullopt;
+    }
 }
 
-void TradeBoardHistory::update_current_low(StockPrice price) {
-    if (this->CurrentStockPrice.lower != price) {  // is (1), (3), (4)
+void TradeBoardHistory::update_current_low(StockPrice price, const TradeBoard& board) {
+    if (this->CurrentStockPrice.lower != price) {  // is (1), (2), (4)
         return;
     }
-    if (!this->sell.order_list[price].empty()) {  // 2の一部
+    if (board.getBuyBoard().OrderExists(price)) {  // 3の一部
         return;
     }
 
-    auto iter = this->buy.order_list.rbegin();
-    while (this->buy.order_list.rend() != iter) {
+    auto iter = board.getBuyBoard().order_list.rbegin();
+    while (board.getBuyBoard().order_list.rend() != iter) {
         if (iter->second.empty()) {
             iter++;
             continue;
@@ -71,5 +75,34 @@ void TradeBoardHistory::update_current_low(StockPrice price) {
         break;
     }
 
-    this->CurrentStockPrice.lower = iter->first;
+    if (iter != board.getBuyBoard().order_list.rend()) {
+        this->CurrentStockPrice.lower = iter->first;
+    } else {
+        this->CurrentStockPrice.lower = std::nullopt;
+    }
+}
+
+void TradeBoardHistory::update_history(StockPrice price, StockCount count) {
+    CurrentStockPrice.latest = price;
+    this->history.push_back({count, price});
+
+    auto& current_history = tick_history.back();
+    if (current_history.start.getValue() == TickHistory::nothing) {
+        current_history.start = price;
+    }
+
+    current_history.end = price;
+
+    if (current_history.high < price) {
+        current_history.high = price;
+    }
+    if (current_history.low > price) {
+        current_history.low = price;
+    }
+}
+
+const TickHistory& TradeBoardHistory::tick() {
+    const auto& result = tick_history.back();
+    tick_history.emplace_back();
+    return result;
 }

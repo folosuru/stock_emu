@@ -1,10 +1,11 @@
 #include "./Trader.hpp"
 
+#include <Stock.hpp>
 #include <cstdio>
 #include <random>
+#include <trade/Trade.hpp>
 
-#include "Stock.hpp"
-#include "Trade.hpp"
+#include "money.hpp"
 
 namespace bot::trader {
 
@@ -18,28 +19,34 @@ constexpr inline StockPrice getMarketPriceHigher(const std::shared_ptr<TradeBoar
                                                  int move_value) {
     const auto current = board->getCurrentPrice();
     if (current.higer) {
-        return board->to_withen_PriceLimit(*current.higer);
+        return board->getPriceLimit().to_withen_PriceLimit(*current.higer);
     }
 
     if (current.lower) {
-        return board->to_withen_PriceLimit(StockPrice{current.lower->getValue() + move_value});
+        return board->getPriceLimit().to_withen_PriceLimit(StockPrice{current.lower->getValue() + move_value});
     }
-    return board->to_withen_PriceLimit(StockPrice(default_price.getValue()));
+    return board->getPriceLimit().to_withen_PriceLimit(StockPrice(default_price.getValue()));
 }
 
 constexpr inline StockPrice getMarketPriceLower(const std::shared_ptr<TradeBoard> &board, StockPrice default_price,
                                                 int move_value) {
     const auto current = board->getCurrentPrice();
     if (current.lower) {
-        return board->to_withen_PriceLimit(*current.lower);
+        return board->getPriceLimit().to_withen_PriceLimit(*current.lower);
     }
 
     if (current.higer) {
-        return board->to_withen_PriceLimit(StockPrice{current.higer->getValue() - move_value});
+        return board->getPriceLimit().to_withen_PriceLimit(StockPrice{current.higer->getValue() - move_value});
     }
 
-    return board->to_withen_PriceLimit(StockPrice(default_price.getValue()));
+    return board->getPriceLimit().to_withen_PriceLimit(StockPrice(default_price.getValue()));
 }
+
+Money_data_t getTradeAmount() {
+    return static_cast<Money_data_t>((10 * amount_dist(engine)) + 45);
+}
+
+constexpr Money_data_t default_price_value = 100000;
 
 }  // namespace
 
@@ -53,14 +60,15 @@ void Random::Trade(Trader &trader, StockMarketRef market) {
 
     switch (action) {
         case 0: {  // buy
-            StockPrice price = getMarketPriceHigher(board, {0}, 1);
-            auto count = StockCount{50};  // (trader.money / price) * amount;
+            StockPrice price = getMarketPriceHigher(board, {default_price_value}, 1);
+            StockCount count = {getTradeAmount()};  // (trader.money / price) * amount;
             trader.buy(price, count, stock, market);
             break;
         }
         case 1: {  // sell
-            StockPrice price = getMarketPriceLower(board, {0}, 1);
-            auto count = StockCount{trader.stock[stock] >= 50 ? 50 : trader.stock[stock].to_StockCount()};
+            StockPrice price = getMarketPriceLower(board, {default_price_value}, 1);
+            auto count_tmp = getTradeAmount();
+            auto count = StockCount{trader.stock[stock] >= count_tmp ? count_tmp : trader.stock[stock].to_StockCount()};
             // trader.stock[stock] * 0.05;  // amount;
 
             trader.sell(price, count, stock, market);
@@ -82,15 +90,38 @@ void Fundamental::Trade(Trader &trader, StockMarketRef market) {
     // std::cout << "value:" << board->StockValue().getValue() << ", price:" <<
     // board->getCurrentPrice().latest.getValue()
     //          << "\n";
-    if (board->getCurrentPrice().higer && (board->getCurrentPrice().higer.value() < board->StockValue())) {
-        //  std::cout << "low\n";
-        StockPrice price = getMarketPriceHigher(board, board->StockValue(), 1);
-        trader.buy(price, {50}, board->id, market);
-    } else if (board->getCurrentPrice().lower && (board->getCurrentPrice().lower.value() > board->StockValue())) {
-        //  std::cout << "high\n";
-        StockPrice price = getMarketPriceLower(board, board->StockValue(), 1);
-        auto count = StockCount{trader.stock[stock] >= 50 ? 50 : trader.stock[stock].to_StockCount()};
-        trader.sell(price, count, board->id, market);
+
+    if (board->getCurrentPrice().higer) {
+        // StockValue よりも安く買える
+        if (board->getCurrentPrice().higer.value() < board->StockValue()) {
+            StockPrice price = getMarketPriceHigher(board, board->StockValue(), 1);
+            trader.buy(price, {getTradeAmount()}, board->id, market);
+            return;
+        } else {
+            // StockValueより高い
+
+            // 買い手がいない
+            if (!board->getCurrentPrice().lower) {
+                return;
+            }
+        }
+    }
+    if (board->getCurrentPrice().lower) {
+        if (board->getCurrentPrice().lower.value() > board->StockValue()) {
+            //  std::cout << "high\n";
+            StockPrice price = getMarketPriceLower(board, board->StockValue(), 1);
+            auto count_tmp = getTradeAmount();
+            auto count = StockCount{trader.stock[stock] >= count_tmp ? count_tmp : trader.stock[stock].to_StockCount()};
+            trader.sell(price, count, board->id, market);
+        } else {
+            // 売り手がいない
+            if (!board->getCurrentPrice().higer) {
+                return;
+            }
+        }
+
+    } else {
+        // std::cout << "nothing\n";
     }
 }
 

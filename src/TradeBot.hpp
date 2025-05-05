@@ -1,12 +1,12 @@
 #pragma once
 #ifndef INCLUDE_TRADE_BOT_HPP
 #define INCLUDE_TRADE_BOT_HPP
-#include <Trade.hpp>
 #include <concepts>
+#include <trade/Trade.hpp>
 
-template <class T>
+template<class T>
 concept TradeBot = requires(T &x, Trader &treader, StockMarketRef &market) {
-  { x.Trade(treader, market) } -> std::same_as<void>;
+    { x.Trade(treader, market) } -> std::same_as<void>;
 };
 
-#endif // INCLUDE_TRADE_BOT_HPP
+#endif  // INCLUDE_TRADE_BOT_HPP

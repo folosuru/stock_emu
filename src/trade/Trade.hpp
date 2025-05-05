@@ -2,6 +2,7 @@
 #include <utility>
 
 #include "money.hpp"
+#include "trade/PriceLimit.hpp"
 #ifndef INCLUDE_TRADE_HPP_
 #define INCLUDE_TRADE_HPP_
 
@@ -11,7 +12,6 @@
 #include <iostream>
 #include <map>
 #include <memory>
-#include <optional>
 #include <vector>
 
 #include "TradeHistory.hpp"
@@ -142,6 +142,18 @@ public:
 
     void tick() noexcept;
 
+    const auto& getHistory() const noexcept {
+        return history;
+    }
+
+    const auto& getPriceLimit() const noexcept {
+        return limit;
+    }
+
+    const auto& getCurrentPrice() const noexcept {
+        return history.getCurrentPrice();
+    }
+
 private:
     template<class Request_t, class limit_destructor_t>
     struct TradeRequestBoard {
@@ -157,6 +169,16 @@ private:
             auto* ref_ptr = &order_list[price].back();
             elem->refer = ref_ptr;
         }
+
+        bool OrderExists(StockPrice price) const {
+            if (const auto find = order_list.find(price); find == order_list.end()) {
+                return false;
+            }
+            if (order_list.at(price).empty()) {
+                return false;
+            }
+            return true;
+        }
     };
 
     struct buy_limit_destruct {
@@ -171,8 +193,10 @@ private:
     TradeRequestBoard<SellTradeRequest, sell_limit_destruct> sell;
 
     StockMarket& market_ref;
-
     StockPrice stock_value = {300};
+
+    TradeBoardHistory history;
+    PriceLimit limit;
 };
 
 class StockMarket {
