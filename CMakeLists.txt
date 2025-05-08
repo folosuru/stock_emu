@@ -7,9 +7,10 @@ add_executable(emu
     src/trade/PriceLimit.cpp
     src/bot/trader/Trader.cpp)
 target_include_directories(emu PRIVATE src/)
+
 target_compile_options(emu PRIVATE
-    -Wall -O0 -g -stdlib=libc++
+    -Wall -O0 -g #-stdlib=libc++
 )
 target_link_options(emu PRIVATE
-    -stdlib=libc++
+    #-stdlib=libc++
 )

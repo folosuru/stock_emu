@@ -8,6 +8,7 @@
 #include "bot/trader/Trader.hpp"
 #include "money.hpp"
 #include "trade/Trade.hpp"
+#include "trade/TradeHistory.hpp"
 
 std::random_device seed_gen;
 std::default_random_engine engine(seed_gen());
@@ -27,6 +28,8 @@ inline void printstat(StockMarket& market, int id) {
         std::printf("low:  --\n");
     }
 
+    std::printf("latest: %d\n", market.get(id)->getCurrentPrice().latest.getValue());
+
     auto board = market.get(id);
 
     auto& lim = board->getPriceLimit().get();
@@ -40,13 +43,25 @@ inline void printstat(StockMarket& market, int id) {
 
 int main() {
     auto market = std::make_shared<StockMarket>();
-    auto id = market->add({700});
+    auto id = market->add({400});
     auto id2 = market->add({500});
-    auto id3 = market->add({1700});
+    // auto id3 = market->add({1700});
 
-    auto trader = Trader(1, 10000000, Trader::StockData_t::create({{id, 10000}, {id2, 10000}, {id3, 10000}}));
-    auto trader2 = Trader(2, 10000000, Trader::StockData_t::create({{id, 10000}, {id2, 10000}, {id3, 10000}}));
-    auto trader3 = Trader(3, 10000000, Trader::StockData_t::create({{id, 10000}, {id2, 10000}, {id3, 10000}}));
+    auto trader = Trader(1, 10000000,
+                         Trader::StockData_t::create({
+                             {id, 10000},
+                             {id2, 10000},
+                         }));
+    auto trader2 = Trader(2, 10000000,
+                          Trader::StockData_t::create({
+                              {id, 10000},
+                              {id2, 10000},
+                          }));
+    auto trader3 = Trader(3, 10000000,
+                          Trader::StockData_t::create({
+                              {id, 10000},
+                              {id2, 10000},
+                          }));
 
     std::uniform_int_distribution<> stock_select(0, market->count() - 1);
 
@@ -58,10 +73,9 @@ int main() {
     trader.buy({298}, {50}, id, market);
     trader.sell({302}, {50}, id, market);
     trader.buy({302}, {25}, id, market);
-    // trader.buy({302}, {50}, id, market);
+    //  trader.buy({302}, {50}, id, market);
 
     printstat(*market, id);
-
     trader.printStat();
     user.printStat();
     auto bot = bot::trader::Random();
@@ -84,32 +98,49 @@ int main() {
     market->get(id)->printAll();
 
     //
-    // return 0;
+    //  return 0;
 
     std::ofstream file("out.csv");
-    for (int loop = 0; loop < 10; loop++) {
+    for (int loop = 0; loop < 500; loop++) {
         // auto start = std::chrono::high_resolution_clock::now();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10; i++) {
             bot.Trade(trader, market);
             bot2.Trade(trader2, market);
             bot3.Trade(trader3, market);
         }
 
+        // market->tick();
         /*
         auto end = std::chrono::high_resolution_clock::now();  // 計測終了
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         std::cout << "Execution time: " << duration.count() << " ms\n";
         */
-        file << board->getCurrentPrice().latest.getValue() << "," << board2->getCurrentPrice().latest.getValue() << ","
-             << market->get(id3)->getCurrentPrice().latest.getValue() << ",";
-        market->tick();
-        if (loop % 50 == 49) {
+
+        auto calcPrice = [](std::optional<StockPrice> p1, std::optional<StockPrice> p2) {
+            if (p1 && p2) {
+                return (p1->getValue() + p2->getValue()) / 2;
+            } else if (p1 && (!p2)) {
+                return p1->getValue();
+            } else if ((!p1) && p2) {
+                return p2->getValue();
+            } else {
+                return 0;
+            }
+        };
+        auto& prices = board->getCurrentPrice();
+        file << calcPrice(prices.higer, prices.lower) << ", " << board->StockValue().getValue()
+             << ", ";  //<< board2->getCurrentPrice().latest.getValue() << ", " << board2->StockValue().getValue() << ",
+                       //";
+        //  << market->get(id3)->getCurrentPrice().latest.getValue() << ",";
+
+        if (loop % 30 == 19 && false) {
             const auto select_id = stock_select(engine);
             std::cout << "selected:" << select_id << "\n";
-            std::normal_distribution dist(0.0, 1.0);
+            std::normal_distribution dist(-1.0, 1.0);
             auto rand_board = market->get(select_id);
-            rand_board->updateStockValue({rand_board->StockValue().getValue() * std::pow(2.0, dist(engine))}, market);
+            rand_board->updateStockValue({rand_board->StockValue().getValue() * std::pow(1.2, dist(engine))}, market);
         }
+
         board->printAll();
 
         if (market->get(id)->getCurrentPrice().higer.has_value()) {
@@ -123,12 +154,23 @@ int main() {
         } else {
             std::printf("low:  --\n");
         }
+
+        if (market->get(id)->getCurrentPrice().lower.has_value() &&
+            market->get(id)->getCurrentPrice().higer.has_value()) {
+            if (*(market->get(id)->getCurrentPrice().lower) == *(market->get(id)->getCurrentPrice().higer)) {
+                break;
+            }
+        }
+        std::printf("latest: %d\n", market->get(id)->getCurrentPrice().latest.getValue());
         // trader.printStat();
         // trader2.printStat();
         // board->printAll();
     }
 
     file.close();
+
+    std::printf("stock: %d\nmoney: %d", trader2.stock.at(id).to_StockCount().value, trader2.money.getValue());
+    std::printf("stock: %d\nmoney: %d", trader3.stock.at(id).to_StockCount().value, trader3.money.getValue());
 
     return 0;
 }

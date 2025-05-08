@@ -11,7 +11,8 @@ namespace bot::trader {
 
 namespace {
 std::random_device seed_gen;
-std::default_random_engine engine(seed_gen());
+// std::default_random_engine engine(seed_gen());
+std::default_random_engine engine(64);
 std::uniform_int_distribution<> action_dist(0, 2);
 std::uniform_real_distribution<> amount_dist(0.0, 1.0);
 
@@ -90,6 +91,7 @@ void Fundamental::Trade(Trader &trader, StockMarketRef market) {
     // std::cout << "value:" << board->StockValue().getValue() << ", price:" <<
     // board->getCurrentPrice().latest.getValue()
     //          << "\n";
+    //
 
     if (board->getCurrentPrice().higer) {
         // StockValue よりも安く買える
@@ -102,6 +104,14 @@ void Fundamental::Trade(Trader &trader, StockMarketRef market) {
 
             // 買い手がいない
             if (!board->getCurrentPrice().lower) {
+                StockPrice price = getMarketPriceLower(board, board->StockValue(), 1);
+                if (price <= board->StockValue()) {
+                    return;
+                }
+                auto count_tmp = getTradeAmount();
+                auto count =
+                    StockCount{trader.stock[stock] >= count_tmp ? count_tmp : trader.stock[stock].to_StockCount()};
+                trader.sell(price, count, board->id, market);
                 return;
             }
         }
@@ -113,16 +123,20 @@ void Fundamental::Trade(Trader &trader, StockMarketRef market) {
             auto count_tmp = getTradeAmount();
             auto count = StockCount{trader.stock[stock] >= count_tmp ? count_tmp : trader.stock[stock].to_StockCount()};
             trader.sell(price, count, board->id, market);
+            return;
         } else {
             // 売り手がいない
             if (!board->getCurrentPrice().higer) {
+                StockPrice price = getMarketPriceHigher(board, board->StockValue(), 1);
+                if (price >= board->StockValue()) {
+                    return;
+                }
+                trader.buy(price, {getTradeAmount()}, board->id, market);
                 return;
             }
         }
-
-    } else {
-        // std::cout << "nothing\n";
     }
+    // std::cout << "nothing\n";
 }
 
 }  // namespace bot::trader

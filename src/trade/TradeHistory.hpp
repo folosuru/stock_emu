@@ -52,7 +52,7 @@ private:
     struct {
         std::optional<StockPrice> higer;
         std::optional<StockPrice> lower;
-        StockPrice latest = {999};
+        StockPrice latest = {0};
     } CurrentStockPrice;
 
     std::deque<TradeHistory> history{{{300}, {100}}};

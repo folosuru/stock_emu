@@ -5,14 +5,86 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title></title>
     <link href="css/style.css" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
+  <canvas id="chart" width="640" height="480"></canvas>
     <script>
         fetch('../build/out.csv')
           .then(response => response.text())
           .then(text => {
-    const rows = text.trim().split(',').map(it => parseInt(it.trim()))
-        ;
+      const rows = text.trim().split(',').map(it => parseInt(it.trim()));
+    const price = rows.filter((d, index) => {
+      return (index % 4 == 0) 
+    });
+    const value = rows.filter((d, index) => {
+      return index % 4 == 1;
+    })
+    const price1 = rows.filter((d, index) => {
+      return (index % 4 == 2) 
+    });
+    const value1 = rows.filter((d, index) => {
+      return index % 4 == 3;
+    })
+
+
+    let labels = [];
+    rows.map((it) => {
+      labels.push('');
+    })
+    const ctx = document.getElementById('chart').getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+            {
+              label: 'データ',
+              data: price,
+              borderColor: 'rgba(255, 99, 132, 1)',
+              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+              borderWidth: 2,
+              fill: true,
+            },
+            {
+              label: '価値',
+              data: value,
+              borderColor: 'green',
+              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+              borderWidth: 2,
+              fill: true,
+            },
+            {
+              label: 'データ',
+              data: price1,
+              borderColor: 'blue',
+              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+              borderWidth: 2,
+              fill: true,
+            },
+            {
+              label: '価値',
+              data: value1,
+              borderColor: 'yellow',
+              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+              borderWidth: 2,
+              fill: true,
+            },
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: ''
+              }
+            }
+          }
+        });
+      
+
     console.log(rows);
   })
   .catch(error => {

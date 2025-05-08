@@ -16,6 +16,11 @@ public:
     void Trade(Trader&, StockMarketRef);
 };
 
+class DayTrade {
+public:
+    void Trade(Trader&, StockMarketRef);
+};
+
 static_assert(TradeBot<Random>, "is not trader");
 static_assert(TradeBot<Fundamental>, "is not trader");
 }
