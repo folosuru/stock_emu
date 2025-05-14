@@ -2,9 +2,6 @@ project(stock_emu_test CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_options(-stdlib=libc++)
-add_link_options(-stdlib=libc++)
-
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -26,10 +23,7 @@ target_link_libraries(stock_emu_test PRIVATE
     GTest::gtest_main
 )
 target_compile_options(stock_emu_test PRIVATE
-    -Wall -O0 -g -stdlib=libc++
-)
-target_link_options(stock_emu_test PRIVATE
-    -stdlib=libc++
+    -Wall -O0 -g 
 )
 include(GoogleTest)
 gtest_discover_tests(stock_emu_test)

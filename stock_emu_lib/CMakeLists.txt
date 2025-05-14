@@ -9,9 +9,6 @@ add_library(stock_emu_lib STATIC
 target_include_directories(stock_emu_lib PRIVATE ../)
 
 target_compile_options(stock_emu_lib PRIVATE
-    -Wall -O0 -g -stdlib=libc++
-)
-target_link_options(stock_emu_lib PRIVATE
-    -stdlib=libc++
+    -Wall -O0 -g 
 )
 
