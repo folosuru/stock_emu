@@ -1,13 +1,14 @@
 #pragma once
-#include <concepts>
-#include <type_traits>
-#include <utility>
+
 #ifndef INCLUDE_UTIL_RINGQUEUE_HPP_
 #define INCLUDE_UTIL_RINGQUEUE_HPP_
 
 #include <array>
+#include <concepts>
 #include <cstddef>
 #include <tuple>
+#include <type_traits>
+#include <utility>
 
 namespace util {
 

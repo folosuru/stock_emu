@@ -1,11 +1,9 @@
 #include "./Trader.hpp"
 
-#include <Stock.hpp>
-#include <cstdio>
 #include <random>
-#include <trade/Trade.hpp>
-
-#include "money.hpp"
+#include <stock_emu_lib/Stock.hpp>
+#include <stock_emu_lib/money.hpp>
+#include <stock_emu_lib/trade/Trade.hpp>
 
 namespace bot::trader {
 

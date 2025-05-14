@@ -1,42 +1,30 @@
 #pragma once
-#include <array>
-#include <csignal>
-#include <cstddef>
-#include <utility>
-
-#include "money.hpp"
-#include "trade/PriceLimit.hpp"
 #ifndef INCLUDE_TRADE_HPP_
 #define INCLUDE_TRADE_HPP_
 
-#include <Stock.hpp>
+#include <array>
+#include <csignal>
+#include <cstddef>
 #include <cstdio>
 #include <deque>
 #include <iostream>
 #include <map>
 #include <memory>
+#include <utility>
 #include <vector>
+//
+#include <stock_emu_lib/Stock.hpp>
+#include <stock_emu_lib/money.hpp>
+#include <stock_emu_lib/trade/PriceLimit.hpp>
+#include <stock_emu_lib/util/RingQueue.hpp>
 
 #include "TradeHistory.hpp"
-#include "util/RingQueue.hpp"
 
 struct TradeBoard;
 struct Trader;
 class StockMarket;
 using StockMarketRef = std::shared_ptr<StockMarket>;
 using Tick_t = int;
-
-struct TradeOrder {
-    StockPrice price;
-    StockCount amount;
-    StockId id;
-    Trader& trader;
-};
-
-struct TradeRequest {
-    StockCount amount;
-    Trader& trader;
-};
 
 struct Trader {
     StockId id;
@@ -63,6 +51,9 @@ struct Trader {
     void buy(StockPrice price, StockCount amount, StockId id, StockMarketRef ref);
 };
 
+template<class T>
+concept TradeRequest = requires(T& t) { t.amount == 0; };
+
 struct SellTradeRequest {
     StockHoldingCount amount;
     Trader& trader;
@@ -74,6 +65,7 @@ struct SellTradeRequest {
 
     void reject() {
         amount.move(amount.to_StockCount()).to(trader.stock[id]);
+        // *refer = nullptr;
     }
 };
 
@@ -89,6 +81,7 @@ struct BuyTradeRequest {
     void reject() {
         money.move(money.as_Price()).to(trader.money);
         this->amount = 0;
+        // *refer = nullptr;
     }
 
     BuyTradeRequest() = delete;
@@ -186,9 +179,23 @@ public:
     }
 
 private:
-    template<class Request_t, class limit_destructor_t>
+    template<TradeRequest Request_t, class limit_destructor_t>
     struct TradeRequestBoard {
-        std::map<StockPrice, std::deque<Request_t*>> order_list = {};
+        class RequestList_Wrapper : public std::deque<Request_t*> {
+        public:
+            bool is_empty() const {
+                for (const auto& i : *this) {
+                    if (i != nullptr) {
+                        if (i->amount != 0) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+        };
+
+        std::map<StockPrice, RequestList_Wrapper> order_list = {};
         util::RingQueue<std::deque<Request_t>, 24, limit_destructor_t> limit_queue;
 
         template<class... Args>
@@ -206,6 +213,10 @@ private:
                 return false;
             }
             if (order_list.at(price).empty()) {
+                return false;
+            }
+            if (order_list.at(price).is_empty()) {
+                printf("???\n");
                 return false;
             }
             return true;

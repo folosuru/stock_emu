@@ -2,7 +2,7 @@
 #ifndef INCLUDE_TRADE_PRICELIMIT_HPP
 #define INCLUDE_TRADE_PRICELIMIT_HPP
 
-#include <Stock.hpp>
+#include <stock_emu_lib/Stock.hpp>
 
 class PriceLimit {
 public:

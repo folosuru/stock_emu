@@ -1,11 +1,12 @@
 #pragma once
-#include "money.hpp"
+
 #ifndef INCLUDE_TRADE_TRADEHISTORY_HPP
 #define INCLUDE_TRADE_TRADEHISTORY_HPP
 
-#include <Stock.hpp>
 #include <deque>
 #include <limits>
+#include <stock_emu_lib/Stock.hpp>
+#include <stock_emu_lib/money.hpp>
 
 struct TradeHistory {
     StockCount amount;

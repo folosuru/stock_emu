@@ -3,9 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-
-#include "Stock.hpp"
-#include "trade/TradeHistory.hpp"
+#include <stock_emu_lib/Stock.hpp>
 
 void Trader::sell(StockPrice price, StockCount amount, StockId id, StockMarketRef ref) {
     (*ref)[id]->LimitOrder_Sell(price, amount, *this);
@@ -44,6 +42,7 @@ bool TradeBoard::LimitOrder_Sell(StockPrice price, StockCount count, Trader& tra
                 buyer_queue.pop_front();
                 break;
             } else {
+                buy_order->amount -= order_stocks.to_StockCount();
                 buy_order->money.move(price * order_stocks.to_StockCount()).to(trader.money);
                 order_stocks.move(order_stocks.to_StockCount()).to(buyer_stock);
                 break;
@@ -54,8 +53,6 @@ bool TradeBoard::LimitOrder_Sell(StockPrice price, StockCount count, Trader& tra
         if (sold_stock != 0) {
             history.update_current_low(price, *this);
             history.update_history(price, sold_stock);
-
-            std::printf("sell: %d\n", price.getValue());
         }
 
         if (order_stocks != 0) {  // 売れ残りがある => order.priceでの買い手がいない

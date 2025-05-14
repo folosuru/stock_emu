@@ -1,10 +1,8 @@
 #include "TradeHistory.hpp"
 
-#include <cstdio>
 #include <optional>
-#include <trade/Trade.hpp>
-
-#include "Stock.hpp"
+#include <stock_emu_lib/Stock.hpp>
+#include <stock_emu_lib/trade/Trade.hpp>
 
 void TradeBoardHistory::update_sell_board_add(StockPrice price) {
     if (!CurrentStockPrice.higer.has_value() || price < this->CurrentStockPrice.higer) {
@@ -38,18 +36,15 @@ void TradeBoardHistory::update_current_high(StockPrice price, const TradeBoard& 
      * に分類される。このうち、処理する必要があるのは2の全部約定だけ
      */
     if (this->CurrentStockPrice.higer != price) {  // is (1), (3), (4)
-        std::printf("not current: return\n");
         return;
     }
     if (board.getSellBoard().OrderExists(price)) {  // 2の一部
-
-        std::printf("seller: order exists (%d)\n", price.getValue());
         return;
     }
 
     auto iter = board.getSellBoard().order_list.begin();
     while (board.getSellBoard().order_list.end() != iter) {
-        if (iter->second.empty()) {
+        if (iter->second.is_empty()) {
             iter++;
             continue;
         }
@@ -64,17 +59,15 @@ void TradeBoardHistory::update_current_high(StockPrice price, const TradeBoard& 
 
 void TradeBoardHistory::update_current_low(StockPrice price, const TradeBoard& board) {
     if (this->CurrentStockPrice.lower != price) {  // is (1), (2), (4)
-        std::printf("not current: return\n");
         return;
     }
     if (board.getBuyBoard().OrderExists(price)) {  // 3の一部
-        std::printf("buyer: order exists (%d)\n", price.getValue());
         return;
     }
 
     auto iter = board.getBuyBoard().order_list.rbegin();
     while (board.getBuyBoard().order_list.rend() != iter) {
-        if (iter->second.empty()) {
+        if (iter->second.is_empty()) {
             iter++;
             continue;
         }

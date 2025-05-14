@@ -3,7 +3,7 @@
 #define INCLUDE_STOCK_HPP_
 #include <format>
 #include <iostream>
-#include <money.hpp>
+#include <stock_emu_lib/money.hpp>
 #include <type_traits>
 
 struct StockCount;
@@ -119,6 +119,10 @@ public:
 
     constexpr auto operator<=>(StockCount v) const {
         return value <=> v.value;
+    }
+
+    constexpr auto operator<=>(Money_data_t v) const {
+        return value <=> v;
     }
 
     constexpr bool operator==(const StockCount& v) const {

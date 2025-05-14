@@ -1,9 +1,8 @@
 #include "PriceLimit.hpp"
 
 #include <algorithm>
-
-#include "Stock.hpp"
-#include "money.hpp"
+#include <stock_emu_lib/Stock.hpp>
+#include <stock_emu_lib/money.hpp>
 
 bool PriceLimit::is_withen_PriceLimit(StockPrice price) const noexcept {
     if (price.getValue() <= 0) {

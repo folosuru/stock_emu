@@ -1,8 +1,8 @@
 #pragma once
 #ifndef BOT_TRADER_TRADER_HPP_
 #define BOT_TRADER_TRADER_HPP_
-#include <TradeBot.hpp>
-#include <trade/Trade.hpp>
+#include <stock_emu_lib/TradeBot.hpp>
+#include <stock_emu_lib/trade/Trade.hpp>
 
 namespace bot::trader {
 

@@ -2,7 +2,7 @@
 #ifndef INCLUDE_TRADE_BOT_HPP
 #define INCLUDE_TRADE_BOT_HPP
 #include <concepts>
-#include <trade/Trade.hpp>
+#include <stock_emu_lib/trade/Trade.hpp>
 
 template<class T>
 concept TradeBot = requires(T &x, Trader &treader, StockMarketRef &market) {
