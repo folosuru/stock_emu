@@ -14,8 +14,8 @@ std::default_random_engine engine{64};
 std::uniform_int_distribution<> action_dist(0, 2);
 std::uniform_real_distribution<> amount_dist(0.0, 1.0);
 
-constexpr inline StockPrice getMarketPriceHigher(const std::shared_ptr<TradeBoard> &board, StockPrice default_price,
-                                                 int move_value) {
+inline StockPrice getMarketPriceHigher(const std::shared_ptr<TradeBoard> &board, StockPrice default_price,
+                                       int move_value) {
     const auto current = board->getCurrentPrice();
     if (current.higer) {
         return board->getPriceLimit().to_withen_PriceLimit(*current.higer);
@@ -27,8 +27,8 @@ constexpr inline StockPrice getMarketPriceHigher(const std::shared_ptr<TradeBoar
     return board->getPriceLimit().to_withen_PriceLimit(StockPrice(default_price.getValue()));
 }
 
-constexpr inline StockPrice getMarketPriceLower(const std::shared_ptr<TradeBoard> &board, StockPrice default_price,
-                                                int move_value) {
+inline StockPrice getMarketPriceLower(const std::shared_ptr<TradeBoard> &board, StockPrice default_price,
+                                      int move_value) {
     const auto current = board->getCurrentPrice();
     if (current.lower) {
         return board->getPriceLimit().to_withen_PriceLimit(*current.lower);
