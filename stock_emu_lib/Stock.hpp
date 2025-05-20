@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #ifndef INCLUDE_STOCK_HPP_
 #define INCLUDE_STOCK_HPP_
 #include <format>
@@ -7,23 +8,26 @@
 #include <type_traits>
 
 struct StockCount;
-using StockId = int;
+using StockId = size_t;
 using StockCount_data_t = int;
 
 class StockPrice {
 public:
-    constexpr StockPrice(Price price) : price(price) {}
+    constexpr StockPrice(Price price_) : price(price_) {}
 
     constexpr StockPrice() : price(0) {}
+
+    constexpr StockPrice(const StockPrice& p) : price(p.price) {}
 
     constexpr Price operator*(int amount) const noexcept {
         return price * amount;
     }
 
-    constexpr Price operator*(double amount) const noexcept {
-        return price * amount;
-    }
-
+    /*
+        constexpr Price operator*(double amount) const noexcept {
+            return {price * amount};
+        }
+    */
     constexpr auto operator<=>(const StockPrice& rhs) const {
         return this->price <=> rhs.price;
     }
@@ -91,7 +95,7 @@ public:
 
     constexpr StockCount to_StockCount() const {
         return StockCount(value);
-    };
+    }
 
     constexpr StockCount_data_t getValue() const {
         return value;

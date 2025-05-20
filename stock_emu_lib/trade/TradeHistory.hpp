@@ -29,7 +29,7 @@ struct TradeBoard;
  */
 class TradeBoardHistory {
 public:
-    const auto& getCurrentPrice() const noexcept {
+    constexpr const auto& getCurrentPrice() const noexcept {
         return CurrentStockPrice;
     }
 

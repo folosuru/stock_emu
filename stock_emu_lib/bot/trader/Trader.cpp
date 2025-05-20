@@ -10,7 +10,7 @@ namespace bot::trader {
 namespace {
 std::random_device seed_gen;
 // std::default_random_engine engine(seed_gen());
-std::default_random_engine engine(64);
+std::default_random_engine engine{64};
 std::uniform_int_distribution<> action_dist(0, 2);
 std::uniform_real_distribution<> amount_dist(0.0, 1.0);
 
@@ -50,7 +50,7 @@ constexpr Money_data_t default_price_value = 100000;
 }  // namespace
 
 void Random::Trade(Trader &trader, StockMarketRef market) {
-    std::uniform_int_distribution<> stock_select(0, market->count() - 1);
+    std::uniform_int_distribution<StockId> stock_select(0, market->count() - 1);
     StockId stock = stock_select(engine);
     auto action = action_dist(engine);
     // auto amount = 0.05 / (amount_dist(engine) + 0.2);
@@ -77,12 +77,15 @@ void Random::Trade(Trader &trader, StockMarketRef market) {
                    // std::cout << "ignore \n" << std::endl;
             break;
         }
+        default: {
+            // unreachable
+        }
     }
 }
 
 void Fundamental::Trade(Trader &trader, StockMarketRef market) {
-    std::discrete_distribution stock_select(market->get_value_dondake_hanareteru().begin(),
-                                            market->get_value_dondake_hanareteru().end());
+    std::discrete_distribution<StockId> stock_select(market->get_value_dondake_hanareteru().begin(),
+                                                     market->get_value_dondake_hanareteru().end());
     StockId stock = stock_select(engine);
     auto board = market->get(stock);
 

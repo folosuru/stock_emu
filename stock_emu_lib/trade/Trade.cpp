@@ -5,12 +5,12 @@
 #include <cstdlib>
 #include <stock_emu_lib/Stock.hpp>
 
-void Trader::sell(StockPrice price, StockCount amount, StockId id, StockMarketRef ref) {
-    (*ref)[id]->LimitOrder_Sell(price, amount, *this);
+void Trader::sell(StockPrice price, StockCount amount, StockId stock_id, StockMarketRef ref) {
+    (*ref)[stock_id]->LimitOrder_Sell(price, amount, *this);
 }
 
-void Trader::buy(StockPrice price, StockCount amount, StockId id, StockMarketRef ref) {
-    (*ref)[id]->LimitOrder_Buy(price, amount, *this);
+void Trader::buy(StockPrice price, StockCount amount, StockId stock_id, StockMarketRef ref) {
+    (*ref)[stock_id]->LimitOrder_Buy(price, amount, *this);
 }
 
 bool TradeBoard::LimitOrder_Sell(StockPrice price, StockCount count, Trader& trader) {
@@ -125,7 +125,7 @@ void TradeBoard::tick() noexcept {
         limit.update_PriceLimit(latest_tick.end);
     }
 
-    sell.limit_queue.destruct(id);
+    sell.limit_queue.destruct();
     buy.limit_queue.destruct();
     if (auto l = getCurrentPrice().lower; l) {
         history.update_current_low(*l, *this);
@@ -145,7 +145,7 @@ void StockMarket::updatePricePerValue(const TradeBoard& ref) {
         std::abs(ref.getHistory().getCurrentPrice().latest.getValue() - ref.StockValue().getValue());
 }
 
-void TradeBoard::sell_limit_destruct::run(std::deque<SellTradeRequest>& q, StockId id) {
+void TradeBoard::sell_limit_destruct::run(std::deque<SellTradeRequest>& q) {
     for (auto& i : q) {
         i.reject();
     }

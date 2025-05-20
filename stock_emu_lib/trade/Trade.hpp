@@ -75,8 +75,8 @@ struct BuyTradeRequest {
     Money money;
     BuyTradeRequest** refer = nullptr;
 
-    BuyTradeRequest(StockCount amount_, Trader& trader_, Money&& money)
-        : amount(amount_), trader(trader_), money(std::move(money)) {}
+    BuyTradeRequest(StockCount amount_, Trader& trader_, Money&& money_)
+        : amount(amount_), trader(trader_), money(std::move(money_)) {}
 
     void reject() {
         money.move(money.as_Price()).to(trader.money);
@@ -150,15 +150,15 @@ public:
         }
     }
 
-    const auto& getBuyBoard() const {
+    constexpr const auto& getBuyBoard() const {
         return buy;
     }
 
-    const auto& getSellBoard() const {
+    constexpr const auto& getSellBoard() const {
         return sell;
     }
 
-    const auto& StockValue() const {
+    constexpr const auto& StockValue() const {
         return stock_value;
     }
 
@@ -166,15 +166,15 @@ public:
 
     void tick() noexcept;
 
-    const auto& getHistory() const noexcept {
+    constexpr const auto& getHistory() const noexcept {
         return history;
     }
 
-    const auto& getPriceLimit() const noexcept {
+    constexpr const auto& getPriceLimit() const noexcept {
         return limit;
     }
 
-    const auto& getCurrentPrice() const noexcept {
+    constexpr const auto& getCurrentPrice() const noexcept {
         return history.getCurrentPrice();
     }
 
@@ -199,7 +199,7 @@ private:
         util::RingQueue<std::deque<Request_t>, 24, limit_destructor_t> limit_queue;
 
         template<class... Args>
-        void add(int expire, StockPrice price, Args&&... arg) {
+        void add(size_t expire, StockPrice price, Args&&... arg) {
             limit_queue.get(expire).emplace_back(std::forward<Args>(arg)...);
             auto* elem = &limit_queue.get(expire).back();
 
@@ -228,7 +228,7 @@ private:
     };
 
     struct sell_limit_destruct {
-        static void run(std::deque<SellTradeRequest>&, StockId);
+        static void run(std::deque<SellTradeRequest>&);
     };
 
     TradeRequestBoard<BuyTradeRequest, buy_limit_destruct> buy;

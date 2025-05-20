@@ -33,7 +33,7 @@ class Money {
 public:
     constexpr Money(Money_data_t value_) : value(value_) {}
 
-    constexpr Money() : value(0) {};
+    constexpr Money() : value(0) {}
 
     // moveする場合、全部受け渡し先に移動
     constexpr Money(Money&& other) : value(0) {
@@ -89,7 +89,7 @@ private:
     };
 
 public:
-    money_move_helper move(Price price) {
+    constexpr money_move_helper move(Price price) {
         return {price, *this};
     }
 };
