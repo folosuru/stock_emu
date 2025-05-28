@@ -1,5 +1,4 @@
 #pragma once
-
 #ifndef INCLUDE_UTIL_RINGQUEUE_HPP_
 #define INCLUDE_UTIL_RINGQUEUE_HPP_
 

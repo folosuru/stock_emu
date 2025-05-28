@@ -1,9 +1,8 @@
 #pragma once
-#include <cstddef>
 #ifndef INCLUDE_STOCK_HPP_
 #define INCLUDE_STOCK_HPP_
+#include <cstddef>
 #include <format>
-#include <iostream>
 #include <stock_emu_lib/money.hpp>
 #include <type_traits>
 
@@ -162,7 +161,6 @@ static_assert([]() {
 }());
 
 inline StockCount operator/(Money& money, const StockPrice& price) {
-    std::cout << money.getValue() << "/" << price.getValue() << std::endl;
     return {money.getValue() / price.getValue()};
 }
 
@@ -198,4 +196,4 @@ struct std::formatter<StockPrice> : std::formatter<int> {
         return std::formatter<int>::format(c.getValue(), ctx);
     }
 };
-#endif
+#endif  // INCLUDE_STOCK_HPP_

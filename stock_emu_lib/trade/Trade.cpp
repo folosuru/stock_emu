@@ -145,14 +145,62 @@ void StockMarket::updatePricePerValue(const TradeBoard& ref) {
         std::abs(ref.getHistory().getCurrentPrice().latest.getValue() - ref.StockValue().getValue());
 }
 
-void TradeBoard::sell_limit_destruct::run(std::deque<SellTradeRequest>& q) {
+void TradeBoard::sell_limit_destruct::run(std::deque<Trade::SellTradeRequest>& q) {
     for (auto& i : q) {
         i.reject();
     }
 }
 
-void TradeBoard::buy_limit_destruct::run(std::deque<BuyTradeRequest>& q) {
+void TradeBoard::buy_limit_destruct::run(std::deque<Trade::BuyTradeRequest>& q) {
     for (auto& i : q) {
         i.reject();
+    }
+}
+
+void TradeBoard::printAll() {
+    constexpr int show_limit = 10;
+
+    std::printf("%10s|price|\n", " ");
+
+    struct count_price {
+        StockPrice price;
+        StockCount count;
+    };
+
+    std::array<count_price, show_limit> prices;
+    size_t price_current_count = 0;
+
+    for (auto i = sell.order_list.begin(); i != sell.order_list.end(); ++i) {
+        const auto& price = i->first;
+        StockCount amount_sum = 0;
+        for (const auto& j : i->second) {
+            amount_sum += j->amount.to_StockCount();
+        }
+        if (amount_sum == 0) continue;
+        prices[price_current_count] = {price, amount_sum};
+        price_current_count++;
+        if (price_current_count == show_limit) break;
+        // std::cout << std::format("{: >10} {: ^5} \n", amount_sum, price.getValue());
+    }
+    for (auto i = prices.rbegin(); i != prices.rend(); i++) {
+        if (i->count.value == 0) {
+            continue;
+        }
+        std::cout << std::format("{: >10} {: ^5} \n", i->count, i->price.getValue());
+    }
+
+    int count = 0;
+    for (auto i = buy.order_list.rbegin(); i != buy.order_list.rend(); ++i, ++count) {
+        if (count > show_limit) {
+            break;
+        }
+
+        const auto& price = i->first;
+        StockCount amount_sum = 0;
+        for (const auto& j : i->second) {
+            amount_sum += j->amount;
+        }
+        if (amount_sum == 0) continue;
+        std::cout << std::format("{:10} {: ^5} {: >10}\n", "", price.getValue(), amount_sum);
     }
 }
