@@ -1,4 +1,5 @@
 #pragma once
+#include "stock_emu_lib/util/MultiVector.hpp"
 #ifndef INCLUDE_TRADE_TRADEHISTORY_HPP
 #define INCLUDE_TRADE_TRADEHISTORY_HPP
 
@@ -20,6 +21,7 @@ struct TickHistory {
 
     constexpr static Money_data_t nothing = std::numeric_limits<Money_data_t>::min();
 };
+
 struct TradeBoard;
 
 /**
@@ -46,7 +48,7 @@ public:
 
     void update_history(StockPrice price, StockCount count);
 
-    const TickHistory& tick();
+    const TickHistory tick();
 
 private:
     struct {
@@ -55,7 +57,9 @@ private:
         StockPrice latest = {0};
     } CurrentStockPrice;
 
+    TickHistory currentTick;
+
     std::deque<TradeHistory> history{{{300}, {100}}};
-    std::deque<TickHistory> tick_history = {{}};
+    util::MultiVector<StockPrice, StockPrice, StockPrice, StockPrice> tick_history;
 };
 #endif  // INCLUDE_TRADE_TRADEHISTORY_HPP

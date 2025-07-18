@@ -135,15 +135,7 @@ void TradeBoard::tick() noexcept {
     }
 }
 
-void TradeBoard::updateStockValue(StockPrice price, StockMarketRef market) {
-    this->stock_value = price;
-    market->updatePricePerValue(*this);
-}
-
-void StockMarket::updatePricePerValue(const TradeBoard& ref) {
-    this->value_dondake_hanareteru.at(ref.id) =
-        std::abs(ref.getHistory().getCurrentPrice().latest.getValue() - ref.StockValue().getValue());
-}
+void StockMarket::updatePricePerValue(const TradeBoard& ref) {}
 
 void TradeBoard::sell_limit_destruct::run(std::deque<Trade::SellTradeRequest>& q) {
     for (auto& i : q) {

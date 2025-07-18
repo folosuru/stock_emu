@@ -85,23 +85,21 @@ void TradeBoardHistory::update_history(StockPrice price, StockCount count) {
     CurrentStockPrice.latest = price;
     this->history.push_back({count, price});
 
-    auto& current_history = tick_history.back();
-    if (current_history.start.getValue() == TickHistory::nothing) {
-        current_history.start = price;
+    if (currentTick.start.getValue() == TickHistory::nothing) {
+        currentTick.start = price;
     }
 
-    current_history.end = price;
+    currentTick.end = price;
 
-    if (current_history.high < price) {
-        current_history.high = price;
+    if (currentTick.high < price) {
+        currentTick.high = price;
     }
-    if (current_history.low > price) {
-        current_history.low = price;
-    }
+    if (price < currentTick.low) currentTick.low = price;
 }
 
-const TickHistory& TradeBoardHistory::tick() {
-    const auto& result = tick_history.back();
-    tick_history.emplace_back();
+const TickHistory TradeBoardHistory::tick() {
+    const auto result = currentTick;
+    tick_history.push(result.start, result.end, result.high, result.low);
+    currentTick = TickHistory{};
     return result;
 }

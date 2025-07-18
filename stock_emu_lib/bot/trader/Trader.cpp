@@ -93,51 +93,9 @@ void Fundamental::Trade(Trader &trader, StockMarketRef market) {
     // board->getCurrentPrice().latest.getValue()
     //          << "\n";
     //
-
-    if (board->getCurrentPrice().higer) {
-        // StockValue よりも安く買える
-        if (board->getCurrentPrice().higer.value() < board->StockValue()) {
-            StockPrice price = getMarketPriceHigher(board, board->StockValue(), 1);
-            trader.buy(price, {getTradeAmount()}, board->id, market);
-            return;
-        } else {
-            // StockValueより高い
-
-            // 買い手がいない
-            if (!board->getCurrentPrice().lower) {
-                StockPrice price = getMarketPriceLower(board, board->StockValue(), 1);
-                if (price <= board->StockValue()) {
-                    return;
-                }
-                auto count_tmp = getTradeAmount();
-                auto count =
-                    StockCount{trader.stock[stock] >= count_tmp ? count_tmp : trader.stock[stock].to_StockCount()};
-                trader.sell(price, count, board->id, market);
-                return;
-            }
-        }
-    }
-    if (board->getCurrentPrice().lower) {
-        if (board->getCurrentPrice().lower.value() > board->StockValue()) {
-            //  std::cout << "high\n";
-            StockPrice price = getMarketPriceLower(board, board->StockValue(), 1);
-            auto count_tmp = getTradeAmount();
-            auto count = StockCount{trader.stock[stock] >= count_tmp ? count_tmp : trader.stock[stock].to_StockCount()};
-            trader.sell(price, count, board->id, market);
-            return;
-        } else {
-            // 売り手がいない
-            if (!board->getCurrentPrice().higer) {
-                StockPrice price = getMarketPriceHigher(board, board->StockValue(), 1);
-                if (price >= board->StockValue()) {
-                    return;
-                }
-                trader.buy(price, {getTradeAmount()}, board->id, market);
-                return;
-            }
-        }
-    }
-    // std::cout << "nothing\n";
+    const auto &datalist = market->getDatalist();
+    auto data = datalist.getRate().getRow(stock);
+    auto value_data1 = std::get<0>(data);
 }
 
 }  // namespace bot::trader

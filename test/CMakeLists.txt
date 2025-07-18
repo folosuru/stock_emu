@@ -13,13 +13,14 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 add_executable(stock_emu_test 
     ./main.cpp
-    ./trade/trade.cpp
+    #./trade/trade.cpp
+    ./Fuzzy.cpp
 )
 
 target_include_directories(stock_emu_test PRIVATE ../)
 
 target_link_libraries(stock_emu_test PRIVATE
-    stock_emu_lib
+    # stock_emu_lib
     GTest::gtest_main
 )
 target_compile_options(stock_emu_test PRIVATE

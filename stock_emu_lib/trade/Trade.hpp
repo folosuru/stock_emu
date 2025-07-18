@@ -1,4 +1,5 @@
 #pragma once
+#include "stock_emu_lib/StockMeta.hpp"
 #ifndef INCLUDE_TRADE_HPP_
 #define INCLUDE_TRADE_HPP_
 
@@ -29,8 +30,7 @@ public:
 
     constexpr static int expire_time = 4;
 
-    TradeBoard(StockId id_, StockMarket& market_, StockPrice value = {300})
-        : id(id_), market_ref(market_), stock_value(value) {}
+    TradeBoard(StockId id_, StockMarket& market_) : id(id_), market_ref(market_) {}
 
     bool LimitOrder_Sell(StockPrice, StockCount, Trader&);
     bool LimitOrder_Buy(StockPrice, StockCount, Trader&);
@@ -47,12 +47,6 @@ public:
     constexpr const auto& getSellBoard() const {
         return sell;
     }
-
-    constexpr const auto& StockValue() const {
-        return stock_value;
-    }
-
-    void updateStockValue(StockPrice price, StockMarketRef market);
 
     void tick() noexcept;
 
@@ -81,7 +75,6 @@ private:
     Trade::TradeRequestBoard<Trade::SellTradeRequest, sell_limit_destruct> sell;
 
     StockMarket& market_ref;
-    StockPrice stock_value = {300};
 
     TradeBoardHistory history;
     PriceLimit limit;
@@ -97,10 +90,10 @@ public:
         return get(id);
     }
 
-    StockId add(StockPrice value = {300}) {
+    StockId add(StockMeta&& meta) {
         auto new_id = static_cast<StockId>(boards.size());
-        value_dondake_hanareteru.emplace_back();
-        boards.emplace_back(new TradeBoard{new_id, *this, value});
+        data_list.add(std::move(meta));
+        boards.emplace_back(new TradeBoard{new_id, *this});
         return new_id;
     }
 
@@ -115,7 +108,11 @@ public:
      * 気が向いたらいい名前を考える
      */
     const auto& get_value_dondake_hanareteru() const {
-        return value_dondake_hanareteru;
+        return data_list.getRate().getColumn<0>();
+    }
+
+    auto& getDatalist() const noexcept {
+        return data_list;
     }
 
     void tick() {
@@ -126,7 +123,7 @@ public:
 
 private:
     std::vector<std::shared_ptr<TradeBoard>> boards;
-    std::vector<double> value_dondake_hanareteru;
+    StockMetaList data_list;
 };
 
 inline Trader::StockData_t Trader::StockData_t::create(const std::vector<std::pair<StockId, StockCount_data_t>>& data) {

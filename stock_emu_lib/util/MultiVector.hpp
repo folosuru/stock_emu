@@ -4,42 +4,76 @@
 #define INCLUDE_UTIL_MULTIVECTOR_HPP_
 #include <cstddef>
 #include <tuple>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
 namespace util {
+#if __cplusplus >= 202002L
+template<class OutT, class... DataT>
+concept OutT_check = requires(DataT... args) { OutT{args...}; };
+#else
+template<class OutT, class... args>
+class OutT_check_class {
+    template<class OutT_, class... args_, typename = decltype(OutT_{std::declval<args_>()...})>
+    static std::true_type chk();
 
-template<class... T>
-class MlutiVector {
-    std::tuple<std::vector<T>...> data;
-
-    constexpr static size_t Data_Colum_count = std::tuple_size<decltype(data)>::value;
+    template<typename, typename...>
+    static std::false_type chk();
 
 public:
+    static constexpr bool value = decltype(chk<OutT, args...>())::value;
+};
+template<class OutT, class... args>
+constexpr bool OutT_check = OutT_check_class<OutT, args...>::value;
+
+#endif
+template<class... T>
+class MultiVector {
+    std::tuple<std::vector<T>...> data;
+    size_t count = 0;
+
+    constexpr static size_t Data_Colum_count = sizeof...(T);
+
+public:
+    size_t getRowCount() const noexcept {
+        return count;
+    }
+
     void push(const T&... args) {
+        count++;
         push_helper<0>(args...);
     }
 
+    void push(const std::tuple<T...>& arg) {
+        count++;
+        push_helper(arg, std::make_index_sequence<Data_Colum_count>());
+    }
+
     template<size_t Index>
-    const auto& getColumn() {
+    const auto& getColumn() const {
         return std::get<Index>(data);
     }
 
-    void erase(size_t index) {
-        erase_helper(index, std::make_index_sequence<Data_Colum_count>());
+    std::tuple<T...> getRow(size_t index) const {
+        return get_As_helper<std::tuple<T...>>(index, std::make_index_sequence<Data_Colum_count>());
     }
 
     template<class Out_t>
     Out_t get_As(size_t index) {
-        static_assert(std::is_aggregate_v<Out_t>, "get_As need construct by {T...}");
-        return get_As_helper<Out_t>(index, std::make_index_sequence<Data_Colum_count>());
+        constexpr auto is_valid = OutT_check<Out_t, T&...>;
+        static_assert(is_valid, "get_As parameter type must need construct by {T&...}");
+        if constexpr (is_valid) {
+            return get_As_helper<Out_t>(index, std::make_index_sequence<Data_Colum_count>());
+        }
     }
 
     template<class Out_t>
     const Out_t get_As(size_t index) const {
-        static_assert(std::is_aggregate_v<Out_t>, "get_As need construct by {T...}");
-        return get_As_helper<Out_t>(index, std::make_index_sequence<Data_Colum_count>());
+        constexpr auto is_valid = OutT_check<Out_t, const T&...>;
+        static_assert(is_valid, "get_As parameter type must need construct by {const T&...}.");
+        if constexpr (is_valid) {
+            return get_As_helper<Out_t>(index, std::make_index_sequence<Data_Colum_count>());
+        }
     }
 
 private:
@@ -48,14 +82,9 @@ private:
         return {std::get<Seq>(data)[index]...};
     }
 
-    template<class VectorT>
-    static void eraseVector(std::vector<VectorT>& vec, size_t index) {
-        vec.erase(vec.begin() + index);
-    }
-
-    template<class IndexT, IndexT... Seq>
-    void erase_helper(size_t index, std::integer_sequence<IndexT, Seq...>) {
-        (..., eraseVector(std::get<Seq>(data), index));
+    template<class Out_t, class IndexT, IndexT... Seq>
+    Out_t get_As_helper(size_t index, std::integer_sequence<IndexT, Seq...>) const {
+        return {std::get<Seq>(data)[index]...};
     }
 
     template<size_t index, class Front>
@@ -67,6 +96,11 @@ private:
     void push_helper(const Front& front, const Tail&... tail) {
         std::get<index>(data).push_back(front);
         push_helper<index + 1>(tail...);
+    }
+
+    template<class IndexT, IndexT... Seq>
+    void push_helper(std::tuple<T...> arg, std::integer_sequence<IndexT, Seq...>) {
+        (..., std::get<Seq>(data).push_back(std::get<Seq>(arg)));
     }
 };
 }
