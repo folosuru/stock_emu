@@ -4,6 +4,7 @@ add_library(stock_emu_lib STATIC
     trade/Trade.cpp
     trade/TradeHistory.cpp
     trade/PriceLimit.cpp
+    StockMeta.cpp
     bot/trader/Trader.cpp)
 
 target_include_directories(stock_emu_lib PRIVATE ../)

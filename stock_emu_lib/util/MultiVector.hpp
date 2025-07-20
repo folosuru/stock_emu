@@ -50,8 +50,23 @@ public:
     }
 
     template<size_t Index>
+    auto& getColumn() {
+        return std::get<Index>(data);
+    }
+
+    template<size_t Index>
     const auto& getColumn() const {
         return std::get<Index>(data);
+    }
+
+    template<size_t column>
+    const auto& getItem(size_t row) const {
+        return getColumn<column>()[row];
+    }
+
+    template<size_t column>
+    auto& getItem(size_t row) {
+        return getColumn<column>()[row];
     }
 
     std::tuple<T...> getRow(size_t index) const {

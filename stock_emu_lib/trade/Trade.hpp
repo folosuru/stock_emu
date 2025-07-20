@@ -3,8 +3,6 @@
 #ifndef INCLUDE_TRADE_HPP_
 #define INCLUDE_TRADE_HPP_
 
-#include <csignal>
-#include <cstddef>
 #include <deque>
 #include <memory>
 #include <utility>

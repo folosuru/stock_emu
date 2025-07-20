@@ -135,7 +135,9 @@ void TradeBoard::tick() noexcept {
     }
 }
 
-void StockMarket::updatePricePerValue(const TradeBoard& ref) {}
+void StockMarket::updatePricePerValue(const TradeBoard& ref) {
+    this->data_list.update(ref.id, ref.getCurrentPrice().latest);
+}
 
 void TradeBoard::sell_limit_destruct::run(std::deque<Trade::SellTradeRequest>& q) {
     for (auto& i : q) {
